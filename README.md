@@ -1,4 +1,4 @@
-# geonaywhere
+# geoanywhere
 
 A new Flutter project.
 

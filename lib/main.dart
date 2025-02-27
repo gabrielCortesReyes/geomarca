@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:geonaywhere/routers/initial_bindings.dart';
-import 'package:geonaywhere/routers/routes.dart';
-import 'package:geonaywhere/services/storage_service.dart';
+import 'package:geoanywhere/routers/initial_bindings.dart';
+import 'package:geoanywhere/routers/routes.dart';
+import 'package:geoanywhere/services/storage_service.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:get/get.dart';
 

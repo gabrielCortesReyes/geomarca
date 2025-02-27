@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:geonaywhere/services/mobile_service.dart';
+import 'package:geoanywhere/services/mobile_service.dart';
 import 'package:get/get.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
-import 'package:geonaywhere/models/user.dart';
+import 'package:geoanywhere/models/user.dart';
 
 class LoginSsoController extends GetxController with WidgetsBindingObserver {
   final storage = const FlutterSecureStorage();
@@ -29,7 +29,7 @@ class LoginSsoController extends GetxController with WidgetsBindingObserver {
   void onInit() {
     super.onInit();
     WidgetsBinding.instance.addObserver(this);
-    initAutoLogin();
+    //initAutoLogin();
   }
 
   @override
@@ -64,7 +64,7 @@ class LoginSsoController extends GetxController with WidgetsBindingObserver {
 
   Future<void> login() async {
     if (clientCode.value.isEmpty) {
-      Get.snackbar("Error", "Ingrese el código para empezar");
+      Get.snackbar("Mensaje", "Ingrese el código para empezar");
       return;
     }
 
@@ -81,7 +81,7 @@ class LoginSsoController extends GetxController with WidgetsBindingObserver {
         final match = RegExp(r'\[MSG-(\d{1,3})\]').firstMatch(data["mensaje"]);
         final errorCode = match != null ? match.group(1) : '00G';
 
-        Get.snackbar("Error Inicio de Sesión", "Favor comuníquese con el administrador. (0x$errorCode)");
+        Get.snackbar("Mensaje Inicio de Sesión", "Favor comuníquese con el administrador. (0x$errorCode)");
         callServiceLog();
         return;
       }
@@ -118,11 +118,11 @@ class LoginSsoController extends GetxController with WidgetsBindingObserver {
       await logEvent('Error en getSsoToken', e.toString());
 
       if (e.toString().contains("500")) {
-        Get.snackbar("Error", "Comuniquese con el administrador de la aplicación. (GEOSSO0x010)");
+        Get.snackbar("Mensaje", "Comuniquese con el administrador de la aplicación. (GEOSSO0x010)");
       } else if (e.toString().contains("404")) {
-        Get.snackbar("Error", "Comuniquese con el administrador de la aplicación. (GEOSSO0x020)");
+        Get.snackbar("Mensaje", "Comuniquese con el administrador de la aplicación. (GEOSSO0x020)");
       } else {
-        Get.snackbar("Error", "Verifique su conexión a internet y vuelva a intentar. (GEOSSO0x030)");
+        Get.snackbar("Mensaje", "Verifique su conexión a internet y vuelva a intentar. (GEOSSO0x030)");
       }
       callServiceLog();
     } finally {
@@ -157,7 +157,7 @@ class LoginSsoController extends GetxController with WidgetsBindingObserver {
             final match = RegExp(r'\[MSG-(\d{1,3})\]').firstMatch(data["mensaje"]);
             final errorCode = match != null ? match.group(1) : '00G';
 
-            Get.snackbar("Error Inicio de Sesión", "Favor comuníquese con el administrador. (0x$errorCode)");
+            Get.snackbar("Mensaje Inicio de Sesión", "Favor comuníquese con el administrador. (0x$errorCode)");
             callServiceLog();
             return;
           }
@@ -207,7 +207,7 @@ class LoginSsoController extends GetxController with WidgetsBindingObserver {
       );
 
       if (data["retorno"] != 1) {
-        Get.snackbar("Error", "Sesión no válida, por favor inicie sesión de nuevo.");
+        Get.snackbar("Mensaje", "Sesión no válida, por favor inicie sesión de nuevo.");
         await storage.deleteAll();
         isLogged.value = false;
         return;
@@ -227,7 +227,6 @@ class LoginSsoController extends GetxController with WidgetsBindingObserver {
       await logEvent('Sesión validada exitosamente');
       Get.offAllNamed('/home');
     } catch (e) {
-      Get.snackbar("Error", "Error al validar sesión.");
       await logEvent('Error en validateSsoToken', e.toString());
     }
   }
@@ -237,7 +236,6 @@ class LoginSsoController extends GetxController with WidgetsBindingObserver {
     try {
       await _hfMobileService.insertLog(logJson);
     } catch (e) {
-      Get.snackbar("Error", "Error al enviar logs.");
       await logEvent('Error en insertLog', e.toString());
     }
   }

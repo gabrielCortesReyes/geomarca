@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:geonaywhere/models/marker.dart';
+import 'package:geoanywhere/models/marker.dart';
 import 'package:get/get.dart';
-import 'package:geonaywhere/services/storage_service.dart';
-import 'package:geonaywhere/controllers/login_controller.dart';
-import 'package:geonaywhere/services/mobile_service.dart';
+import 'package:geoanywhere/services/storage_service.dart';
+import 'package:geoanywhere/controllers/login_controller.dart';
+import 'package:geoanywhere/services/mobile_service.dart';
 
 class MarkerController extends GetxController {
   final StorageService storageService = Get.find<StorageService>();
@@ -37,7 +37,7 @@ class MarkerController extends GetxController {
       isSyncing.value = true;
       final marcasNoSync = await storageService.getMarcasNoSync();
       if (marcasNoSync.length == 0) {
-        Get.snackbar("Error", "No hay marcas pendientes de sincronizar", snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar("Mensaje", "No hay marcas pendientes de sincronizar", snackPosition: SnackPosition.BOTTOM);
         return;
       }
       for (final marca in marcasNoSync) {
@@ -62,13 +62,13 @@ class MarkerController extends GetxController {
           await storageService.updateMarcaSync(marcaId);
           loadMarcas();
         } else {
-          Get.snackbar("Error", "No se pudo sincronizar la marca, vuelve a iniciar sesión",
+          Get.snackbar("Mensaje", "No se pudo sincronizar la marca, vuelve a iniciar sesión",
               snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.orange, colorText: Colors.white);
           return;
         }
       }
     } catch (e) {
-      Get.snackbar("Error", "No se pudo sincronizar las marcas", snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar("Mensaje", "No se pudo sincronizar las marcas", snackPosition: SnackPosition.BOTTOM);
     } finally {
       isSyncing.value = false;
     }

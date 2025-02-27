@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'package:geonaywhere/models/marker.dart';
+import 'package:geoanywhere/controllers/login_controller.dart';
+import 'package:geoanywhere/models/marker.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -37,20 +38,26 @@ class HfMobileService extends GetxService {
     }
   }
 
-  Future<Map<String, dynamic>> getTimeZoneByCoords(double lat, double lon) async {
+  Future<String?> getTimeZoneByCoords(double lat, double lon) async {
     try {
       final response = await http.get(
         Uri.parse("$apiTimeZoneUrl/v2.1/get-time-zone?key=$apiKeyTimeZone&format=json&by=position&lat=$lat&lng=$lon"),
       );
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        if (data.containsKey("formatted")) {
+          String date = data["formatted"];
+          return date;
+        }
       } else {
-        return await _handleError(response);
+        return null;
       }
     } catch (e) {
-      return {"error": "Error de conexión: $e"};
+      print("Error de Conexión");
     }
+    return null;
   }
 
   Future<Map<String, dynamic>> addMarca(Marker marker, String token) async {
@@ -62,11 +69,15 @@ class HfMobileService extends GetxService {
       );
 
       if (response.statusCode == 200) {
-        print(response.body);
-
         return jsonDecode(response.body);
+      } else if (response.statusCode == 401) {
+        String? newToken = await regenToken();
+        if (newToken != null) {
+          return await addMarca(marker, newToken);
+        } else {
+          return {"error": "Token expirado, reingrese a la aplicación"};
+        }
       } else {
-        print(response.body);
         return await _handleError(response);
       }
     } catch (e) {
@@ -185,5 +196,27 @@ class HfMobileService extends GetxService {
   Future<dynamic> getData(String key) async {
     String? value = await storage.read(key: key);
     return value != null ? jsonDecode(value) : null;
+  }
+
+  Future<String?> regenToken() async {
+    try {
+      final response = await http.get(
+        Uri.parse("$apiUrlFace/mobile/access/regentoken"),
+        headers: {"Content-Type": "application/json", "Authorization": apiKeyManageBearer},
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        if (data.containsKey("token")) {
+          String newToken = data["token"];
+          //loginController.user.value = loginController.user.value?.copyWith(token: newToken);
+          return newToken;
+        }
+      }
+    } catch (e) {
+      print("Mensaje regenerando token: $e");
+    }
+    return null;
   }
 }

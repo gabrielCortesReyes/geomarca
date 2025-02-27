@@ -1,4 +1,4 @@
-package com.atmz.geonaywhere
+package com.atmz.geoanywhere
 
 import io.flutter.embedding.android.FlutterActivity
 

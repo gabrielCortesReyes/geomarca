@@ -20,7 +20,7 @@ class LocationController extends GetxController {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        Get.snackbar("Error", "El servicio de ubicación está deshabilitado");
+        Get.snackbar("Mensaje", "El servicio de ubicación está deshabilitado");
         hasError.value = true;
         isLoading.value = false;
         return;
@@ -38,7 +38,7 @@ class LocationController extends GetxController {
       }
 
       if (permission == LocationPermission.deniedForever) {
-        Get.snackbar("Error", "Debes habilitar la ubicación en Configuración.");
+        Get.snackbar("Mensaje", "Debes habilitar la ubicación en Configuración.");
         hasError.value = true;
         isLoading.value = false;
         return;
@@ -48,7 +48,7 @@ class LocationController extends GetxController {
       latitude.value = position.latitude;
       longitude.value = position.longitude;
     } catch (e) {
-      Get.snackbar("Error", "No se pudo obtener la ubicación.");
+      Get.snackbar("Mensaje", "No se pudo obtener la ubicación.");
       hasError.value = true;
     } finally {
       isLoading.value = false;

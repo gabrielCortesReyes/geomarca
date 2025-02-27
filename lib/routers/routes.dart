@@ -1,6 +1,6 @@
-import 'package:geonaywhere/ui/login.dart';
-import 'package:geonaywhere/ui/home.dart';
-import 'package:geonaywhere/ui/markers.dart';
+import 'package:geoanywhere/ui/login.dart';
+import 'package:geoanywhere/ui/home.dart';
+import 'package:geoanywhere/ui/markers.dart';
 import 'package:get/get.dart';
 
 abstract class AppRoutes {

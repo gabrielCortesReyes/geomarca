@@ -1,6 +1,6 @@
 {
-    "name": "geonaywhere",
-    "short_name": "geonaywhere",
+    "name": "geoanywhere",
+    "short_name": "geoanywhere",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

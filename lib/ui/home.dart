@@ -1,17 +1,16 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:geonaywhere/models/marker.dart';
-import 'package:geonaywhere/models/user.dart';
-import 'package:geonaywhere/services/storage_service.dart';
-import 'package:geonaywhere/utils/utils.dart';
+import 'package:geoanywhere/models/marker.dart';
+import 'package:geoanywhere/models/user.dart';
+import 'package:geoanywhere/services/storage_service.dart';
+import 'package:geoanywhere/utils/utils.dart';
 import 'package:get/get.dart';
-import 'package:geonaywhere/routers/routes.dart';
-import 'package:geonaywhere/controllers/login_controller.dart';
-import 'package:geonaywhere/controllers/location_controller.dart';
-import 'package:geonaywhere/controllers/version_controller.dart';
-import 'package:geonaywhere/controllers/marker_controller.dart';
-import 'package:geonaywhere/services/mobile_service.dart';
+import 'package:geoanywhere/routers/routes.dart';
+import 'package:geoanywhere/controllers/login_controller.dart';
+import 'package:geoanywhere/controllers/location_controller.dart';
+import 'package:geoanywhere/controllers/version_controller.dart';
+import 'package:geoanywhere/controllers/marker_controller.dart';
+import 'package:geoanywhere/services/mobile_service.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -160,7 +159,7 @@ class _HomePageState extends State<HomePage> {
   void _alertSync() async {
     final marcasNoSync = await storageService.getMarcasNoSync();
     if (marcasNoSync.length == 0) {
-      Get.snackbar("Error", "No hay marcas pendientes de sincronizar", snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar("Mensaje", "No hay marcas pendientes de sincronizar", snackPosition: SnackPosition.BOTTOM);
       return;
     }
     Get.dialog(
@@ -226,7 +225,19 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _registrarMarca(int marca) async {
     try {
-      User userData = loginController.user.value!;
+      User? userData = loginController.user.value;
+      var connectivityResult = await Connectivity().checkConnectivity();
+
+      if (userData == null || userData.token == null) {
+        Get.snackbar("Mensaje", "Usuario no autenticado",
+            snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+        return;
+      }
+
+      String? formatedDate = connectivityResult != ConnectivityResult.none
+          ? await mobileService.getTimeZoneByCoords(
+              locationController.latitude.value, locationController.longitude.value)
+          : formatDate();
 
       Marker marker = Marker(
         pDeviceId: 0,
@@ -234,7 +245,7 @@ class _HomePageState extends State<HomePage> {
         pRut: userData.detalle?.username ?? "",
         pEquipo: int.parse(userData.detalle?.hfEquipId ?? "0"),
         pGeofenceId: int.parse(userData.detalle?.orgId ?? "0"),
-        pFechaHora: formatDate(),
+        pFechaHora: formatedDate!,
         pSentido: marca,
         pTipo: 0,
         pLat: locationController.latitude.value,
@@ -243,18 +254,22 @@ class _HomePageState extends State<HomePage> {
 
       int marcaId = await storageService.insertMarca(marker.toJson());
 
-      Map<String, dynamic> response = await mobileService.addMarca(marker, userData.token ?? "");
+      if (connectivityResult != ConnectivityResult.none) {
+        Map<String, dynamic> response = await mobileService.addMarca(marker, userData.token!);
 
-      if (response.containsKey("retorno") && response["retorno"] == 1) {
-        await storageService.updateMarcaSync(marcaId);
-
-        Get.snackbar("Éxito", "Marca registrada correctamente!", snackPosition: SnackPosition.BOTTOM);
+        if (response.containsKey("retorno") && response["retorno"] == 1) {
+          await storageService.updateMarcaSync(marcaId);
+          Get.snackbar("Éxito", "Marca registrada correctamente!", snackPosition: SnackPosition.BOTTOM);
+        } else {
+          Get.snackbar("Mensaje", "Token Expirado, por favor ingrese nuevamente, marca guardada localmente",
+              snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.orange, colorText: Colors.white);
+        }
       } else {
-        Get.snackbar("Error", "Token Expirado, por favor ingrese nuevamente, marca guardada localmente",
+        Get.snackbar("Mensaje", "Sin Conexión a internet, marca guardada localmente",
             snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.orange, colorText: Colors.white);
       }
     } catch (e) {
-      Get.snackbar("Error", "No se pudo obtener la ubicación",
+      Get.snackbar("Mensaje", "No se pudo obtener la ubicación",
           snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
     }
   }

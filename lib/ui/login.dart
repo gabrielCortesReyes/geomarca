@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:geonaywhere/controllers/login_controller.dart';
+import 'package:geoanywhere/controllers/login_controller.dart';
 
 class LoginPage extends StatelessWidget {
   final LoginSsoController controller = Get.put(LoginSsoController());

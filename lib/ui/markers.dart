@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:geonaywhere/controllers/login_controller.dart';
-import 'package:geonaywhere/services/storage_service.dart';
-import 'package:geonaywhere/controllers/marker_controller.dart';
+import 'package:geoanywhere/controllers/login_controller.dart';
+import 'package:geoanywhere/services/storage_service.dart';
+import 'package:geoanywhere/controllers/marker_controller.dart';
 
 class MarkersPage extends StatefulWidget {
   @override
