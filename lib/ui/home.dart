@@ -1,7 +1,9 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geonaywhere/models/marker.dart';
 import 'package:geonaywhere/models/user.dart';
+import 'package:geonaywhere/services/storage_service.dart';
 import 'package:geonaywhere/utils/utils.dart';
 import 'package:get/get.dart';
 import 'package:geonaywhere/routers/routes.dart';
@@ -11,12 +13,35 @@ import 'package:geonaywhere/controllers/version_controller.dart';
 import 'package:geonaywhere/controllers/marker_controller.dart';
 import 'package:geonaywhere/services/mobile_service.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   final LoginSsoController loginController = Get.put(LoginSsoController());
   final LocationController locationController = Get.put(LocationController());
   final VersionController versionController = Get.put(VersionController());
   final MarkerController markerController = Get.put(MarkerController());
   final HfMobileService mobileService = Get.put(HfMobileService());
+  final StorageService storageService = Get.put(StorageService());
+
+  @override
+  void initState() {
+    super.initState();
+    _checkConnectivityAndSync();
+  }
+
+  Future<void> _checkConnectivityAndSync() async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+
+    if (connectivityResult != ConnectivityResult.none) {
+      await markerController.syncAllMarcas();
+      markerController.loadMarcas();
+    } else {
+      print("No hay conexión a Internet. No se sincronizarán las marcas.");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,38 +82,10 @@ class HomePage extends StatelessWidget {
               ],
             ),
             Column(
+              spacing: 20,
               children: [
                 _buildButton("Entrada", Icons.login, Colors.green, () => _registrarMarca(0)),
-                SizedBox(height: 16),
                 _buildButton("Salida", Icons.logout, Colors.red, () => _registrarMarca(1)),
-                SizedBox(height: 16),
-                Obx(() {
-                  if (markerController.marcas.isEmpty) {
-                    return Center(child: Text("No hay marcas registradas."));
-                  }
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: markerController.marcas.length,
-                    itemBuilder: (context, index) {
-                      final marca = markerController.marcas[index];
-                      return Card(
-                        child: ListTile(
-                          leading: Icon(marca['sentido'] == "Entrada" ? Icons.login : Icons.logout,
-                              color: marca['sentido'] == "Entrada" ? Colors.green : Colors.red),
-                          title: Text("${marca['sentido']}"),
-                          subtitle: Text(
-                            "Fecha: ${marca['fecha_hora']}\nUbicación: ${marca['latitud']}, ${marca['longitud']}",
-                            style: TextStyle(fontSize: 12),
-                          ),
-                          trailing: marca['sincronizado'] == 'S'
-                              ? Icon(Icons.check_circle, color: Colors.green)
-                              : Icon(Icons.sync, color: Colors.orange),
-                          onLongPress: () => markerController.deleteMarca(marca['marca_id']),
-                        ),
-                      );
-                    },
-                  );
-                }),
               ],
             ),
             _buildFooter(),
@@ -115,7 +112,7 @@ class HomePage extends StatelessWidget {
               ],
             ),
           ),
-          _buildDrawerItem(Icons.sync, "Sincronizar", () {}),
+          _buildDrawerItem(Icons.sync, "Sincronizar", () => _alertSync()),
           _buildDrawerItem(Icons.location_on, "Ver Marcas", () => Get.toNamed(AppRoutes.markers)),
           _buildDrawerItem(Icons.info, "Acerca de", _buildAbout),
           Divider(),
@@ -154,6 +151,36 @@ class HomePage extends StatelessWidget {
           TextButton(
             onPressed: () => Get.back(),
             child: Text("Cerrar"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _alertSync() async {
+    final marcasNoSync = await storageService.getMarcasNoSync();
+    if (marcasNoSync.length == 0) {
+      Get.snackbar("Error", "No hay marcas pendientes de sincronizar", snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+    Get.dialog(
+      AlertDialog(
+        title: Text("Sincronizar"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("¿Desea sincronizar las marcas?"),
+            Text("${marcasNoSync.length} marcas pendientes de sincronizar"),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text("Cerrar"),
+          ),
+          TextButton(
+            onPressed: () => markerController.syncAllMarcas(),
+            child: Text("Sincronizar"),
           ),
         ],
       ),
@@ -214,11 +241,19 @@ class HomePage extends StatelessWidget {
         pLong: locationController.longitude.value,
       );
 
-      await mobileService.addMarca(marker, userData.token ?? "");
+      int marcaId = await storageService.insertMarca(marker.toJson());
 
-      Get.snackbar("Éxito", "Marca registrada correctamente!", snackPosition: SnackPosition.BOTTOM);
+      Map<String, dynamic> response = await mobileService.addMarca(marker, userData.token ?? "");
+
+      if (response.containsKey("retorno") && response["retorno"] == 1) {
+        await storageService.updateMarcaSync(marcaId);
+
+        Get.snackbar("Éxito", "Marca registrada correctamente!", snackPosition: SnackPosition.BOTTOM);
+      } else {
+        Get.snackbar("Error", "Token Expirado, por favor ingrese nuevamente, marca guardada localmente",
+            snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.orange, colorText: Colors.white);
+      }
     } catch (e) {
-      print(e);
       Get.snackbar("Error", "No se pudo obtener la ubicación",
           snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
     }

@@ -136,7 +136,7 @@ class StorageService extends GetxService {
 
   Future<int> updateMarcaSync(int id) async {
     final db = await database;
-    return await db.update('marca', {'sincronizado': 'S'}, where: 'marca_id = ?', whereArgs: [id]);
+    return await db.update('marca', {'p_sincronizado': 'Sincronizado'}, where: 'marca_id = ?', whereArgs: [id]);
   }
 
   Future<int> deleteMarca(int id) async {
@@ -146,6 +146,6 @@ class StorageService extends GetxService {
 
   Future<List<Map<String, dynamic>>> getMarcasNoSync() async {
     final db = await database;
-    return await db.query('marca', where: 'sincronizado = ?', whereArgs: ['N']);
+    return await db.query('marca', where: 'p_sincronizado = ?', whereArgs: ['Pendiente']);
   }
 }

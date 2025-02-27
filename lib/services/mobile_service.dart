@@ -63,6 +63,7 @@ class HfMobileService extends GetxService {
 
       if (response.statusCode == 200) {
         print(response.body);
+
         return jsonDecode(response.body);
       } else {
         print(response.body);
