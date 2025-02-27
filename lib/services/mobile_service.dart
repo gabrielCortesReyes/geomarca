@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:geoanywhere/controllers/login_controller.dart';
 import 'package:geoanywhere/models/marker.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
