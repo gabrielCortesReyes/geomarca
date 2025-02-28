@@ -24,11 +24,21 @@ class _HomePageState extends State<HomePage> {
   final MarkerController markerController = Get.put(MarkerController());
   final HfMobileService mobileService = Get.put(HfMobileService());
   final StorageService storageService = Get.put(StorageService());
+  bool isLoadingEntrada = false;
+  bool isLoadingSalida = false;
 
   @override
   void initState() {
     super.initState();
-    _checkConnectivityAndSync();
+    //_checkConnectivityAndSync();
+    Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) async {
+      if (results.isNotEmpty && results.first != ConnectivityResult.none) {
+        await markerController.syncAllMarcas();
+        markerController.loadMarcas();
+      } else {
+        print("No hay conexión a Internet. No se sincronizarán las marcas.");
+      }
+    });
   }
 
   Future<void> _checkConnectivityAndSync() async {
@@ -80,17 +90,21 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-            Column(
-              spacing: 20,
-              children: [
-                _buildButton("Entrada", Icons.login, Colors.green, () => _registrarMarca(0)),
-                _buildButton("Salida", Icons.logout, Colors.red, () => _registrarMarca(1)),
-              ],
-            ),
+            _buildButtons(),
             _buildFooter(),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildButtons() {
+    return Column(
+      children: [
+        _buildButton("Entrada", Icons.login, Colors.green, isLoadingEntrada, () => _registrarMarca(0)),
+        SizedBox(height: 10),
+        _buildButton("Salida", Icons.logout, Colors.red, isLoadingSalida, () => _registrarMarca(1)),
+      ],
     );
   }
 
@@ -114,8 +128,6 @@ class _HomePageState extends State<HomePage> {
           _buildDrawerItem(Icons.sync, "Sincronizar", () => _alertSync()),
           _buildDrawerItem(Icons.location_on, "Ver Marcas", () => Get.toNamed(AppRoutes.markers)),
           _buildDrawerItem(Icons.info, "Acerca de", _buildAbout),
-          Divider(),
-          _buildDrawerItem(Icons.logout, "Cerrar Sesión", () {}),
         ],
       ),
     );
@@ -132,7 +144,7 @@ class _HomePageState extends State<HomePage> {
             SizedBox(height: 10),
             Text("Empresa: Automatiza"),
             Text("App: Geoanywhere SSO"),
-            Text("Versión: 1.0.0"),
+            Text("Versión: ${versionController.appVersion.value}"),
             Text("Fecha: ${getCurrentDateTime()}"),
             SizedBox(height: 10),
             Obx(
@@ -186,19 +198,19 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildButton(String text, IconData icon, Color color, VoidCallback onPressed) {
+  Widget _buildButton(String text, IconData icon, Color color, bool isLoading, VoidCallback onPressed) {
     return SizedBox(
       width: double.infinity,
       height: 60,
       child: ElevatedButton.icon(
         style: ElevatedButton.styleFrom(
-          backgroundColor: color,
+          backgroundColor: isLoading ? Colors.grey : color,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        icon: Icon(icon, color: Colors.white),
+        icon: isLoading ? CircularProgressIndicator(color: Colors.white) : Icon(icon, color: Colors.white),
         label: Text(text, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-        onPressed: onPressed,
+        onPressed: isLoading ? null : onPressed,
       ),
     );
   }
@@ -225,18 +237,23 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _registrarMarca(int marca) async {
     try {
-      User? userData = loginController.user.value;
-      var connectivityResult = await Connectivity().checkConnectivity();
+      setState(() {
+        if (marca == 0) {
+          isLoadingEntrada = true;
+        } else {
+          isLoadingSalida = true;
+        }
+      });
 
+      User? userData = loginController.user.value;
       if (userData == null || userData.token == null) {
-        Get.snackbar("Mensaje", "Usuario no autenticado",
-            snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+        Get.snackbar("Mensaje", "Usuario no autenticado", backgroundColor: Colors.red, colorText: Colors.white);
         return;
       }
 
+      var connectivityResult = await Connectivity().checkConnectivity();
       String? formatedDate = connectivityResult != ConnectivityResult.none
-          ? await mobileService.getTimeZoneByCoords(
-              locationController.latitude.value, locationController.longitude.value)
+          ? await mobileService.getTimeZoneByCoords(locationController.latitude.value, locationController.longitude.value)
           : formatDate();
 
       Marker marker = Marker(
@@ -253,24 +270,25 @@ class _HomePageState extends State<HomePage> {
       );
 
       int marcaId = await storageService.insertMarca(marker.toJson());
-
       if (connectivityResult != ConnectivityResult.none) {
-        Map<String, dynamic> response = await mobileService.addMarca(marker, userData.token!);
-
-        if (response.containsKey("retorno") && response["retorno"] == 1) {
+        var response = await mobileService.addMarca(marker, userData.token!);
+        if (response["retorno"] == 1) {
           await storageService.updateMarcaSync(marcaId);
-          Get.snackbar("Éxito", "Marca registrada correctamente!", snackPosition: SnackPosition.BOTTOM);
+          Get.snackbar("Éxito", "Marca registrada correctamente!");
         } else {
-          Get.snackbar("Mensaje", "Token Expirado, por favor ingrese nuevamente, marca guardada localmente",
-              snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.orange, colorText: Colors.white);
+          Get.snackbar("Error", "Token expirado, marca guardada localmente", backgroundColor: Colors.orange);
         }
       } else {
-        Get.snackbar("Mensaje", "Sin Conexión a internet, marca guardada localmente",
-            snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.orange, colorText: Colors.white);
+        Get.snackbar("Mensaje", "Sin conexión, marca guardada localmente", backgroundColor: Colors.orange);
       }
-    } catch (e) {
-      Get.snackbar("Mensaje", "No se pudo obtener la ubicación",
-          snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+    } finally {
+      setState(() {
+        if (marca == 0) {
+          isLoadingEntrada = false;
+        } else {
+          isLoadingSalida = false;
+        }
+      });
     }
   }
 }

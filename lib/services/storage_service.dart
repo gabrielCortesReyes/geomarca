@@ -17,7 +17,7 @@ class StorageService extends GetxService {
     final path = join(dbPath, dbName);
     final bool dbExists = await databaseExists(path);
 
-    return await openDatabase(
+    final db = await openDatabase(
       path,
       version: 3,
       onCreate: (db, version) async {
@@ -31,6 +31,10 @@ class StorageService extends GetxService {
         }
       },
     );
+
+    //await deleteOldMarcas();
+
+    return db;
   }
 
   Future<void> _createTables(Database db) async {
@@ -74,6 +78,22 @@ class StorageService extends GetxService {
     ''');
   }
 
+  Future<void> deleteOldMarcas() async {
+    final db = await database;
+    final ninetyDaysAgo = DateTime.now().subtract(Duration(days: 90));
+
+    // Formatear la fecha correctamente como 'yyyy-MM-dd HH:MM:SS'
+    final ninetyDaysAgoStr =
+        "${ninetyDaysAgo.year}-${ninetyDaysAgo.month.toString().padLeft(2, '0')}-${ninetyDaysAgo.day.toString().padLeft(2, '0')} "
+        "${ninetyDaysAgo.hour.toString().padLeft(2, '0')}:${ninetyDaysAgo.minute.toString().padLeft(2, '0')}:${ninetyDaysAgo.second.toString().padLeft(2, '0')}";
+
+    await db.delete(
+      'marca',
+      where: "p_fecha_hora < ?",
+      whereArgs: [ninetyDaysAgoStr],
+    );
+  }
+
   Future<void> _applyMigrations(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute("ALTER TABLE usuario ADD COLUMN code_sso TEXT;");
@@ -97,7 +117,7 @@ class StorageService extends GetxService {
   Future<List<Map<String, dynamic>>> getRecords(String table, {Map<String, dynamic>? where}) async {
     final db = await database;
     if (where == null || where.isEmpty) {
-      return await db.query(table);
+      return await db.query(table, orderBy: "marca_id DESC");
     } else {
       String whereString = where.keys.map((key) => "$key = ?").join(" AND ");
       List<dynamic> whereArgs = where.values.toList();
@@ -126,12 +146,14 @@ class StorageService extends GetxService {
 
   Future<int> insertMarca(Map<String, dynamic> data) async {
     final db = await database;
-    return await db.insert('marca', data);
+    int result = await db.insert('marca', data);
+    await deleteOldMarcas();
+    return result;
   }
 
   Future<List<Map<String, dynamic>>> getMarcas() async {
     final db = await database;
-    return await db.query('marca');
+    return await db.query('marca', orderBy: "marca_id DESC");
   }
 
   Future<int> updateMarcaSync(int id) async {

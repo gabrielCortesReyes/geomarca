@@ -24,7 +24,7 @@ class _MarkersPageState extends State<MarkersPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Marcadores"),
+        title: const Text("Marcas"),
         actions: [
           TextButton(
             onPressed: () async {
@@ -51,14 +51,12 @@ class _MarkersPageState extends State<MarkersPage> {
                 ),
                 _buildExpansionTile(
                   icon: Icons.sync,
-                  title:
-                      "Sincronizadas (${markerController.marcas.where((marca) => marca['p_sincronizado'] == 'Sincronizado').length})",
+                  title: "Sincronizadas (${markerController.marcas.where((marca) => marca['p_sincronizado'] == 'Sincronizado').length})",
                   filter: (marca) => marca['p_sincronizado'] == 'Sincronizado',
                 ),
                 _buildExpansionTile(
                   icon: Icons.pending,
-                  title:
-                      "Pendientes (${markerController.marcas.where((marca) => marca['p_sincronizado'] != 'Sincronizado').length})",
+                  title: "Pendientes (${markerController.marcas.where((marca) => marca['p_sincronizado'] != 'Sincronizado').length})",
                   filter: (marca) => marca['p_sincronizado'] != 'Sincronizado',
                 ),
               ],
@@ -109,10 +107,7 @@ class _MarkersPageState extends State<MarkersPage> {
             leading: Icon(icon),
             title: Text(title),
             children: filteredMarcas.isEmpty
-                ? [
-                    const Center(
-                        child: Padding(padding: EdgeInsets.all(8.0), child: Text("No hay marcas registradas.")))
-                  ]
+                ? [const Center(child: Padding(padding: EdgeInsets.all(8.0), child: Text("No hay marcas registradas.")))]
                 : filteredMarcas.map((marca) => _buildMarcaCard(marca)).toList(),
           );
         },
