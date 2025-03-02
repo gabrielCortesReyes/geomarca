@@ -15,17 +15,17 @@ class LoginPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Image.asset("assets/images/logo_atmz.png"),
-              SizedBox(height: 20),
-              Text(
+              Image.asset("assets/images/logo_atmz.png", height: 100),
+              const SizedBox(height: 20),
+              const Text(
                 "Bienvenido a",
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Colors.black87),
               ),
-              Text(
+              const Text(
                 "GeoAnywhere SSO",
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Colors.black87),
               ),
-              SizedBox(height: 40),
+              const SizedBox(height: 40),
               TextFormField(
                 decoration: InputDecoration(
                   labelText: "Código Cliente",
@@ -33,11 +33,11 @@ class LoginPage extends StatelessWidget {
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   filled: true,
                   fillColor: Colors.white,
-                  prefixIcon: Icon(Icons.business, color: Colors.blueAccent),
+                  prefixIcon: const Icon(Icons.business, color: Colors.blueAccent),
                 ),
                 onChanged: (value) => controller.clientCode.value = value,
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Obx(
                 () => SizedBox(
                   width: double.infinity,
@@ -50,24 +50,19 @@ class LoginPage extends StatelessWidget {
                       ),
                     ),
                     onPressed: controller.isLoading.value ? null : controller.login,
-                    child: AnimatedSwitcher(
-                      duration: Duration(milliseconds: 300),
-                      child: controller.isLoading.value
-                          ? CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.login, color: Colors.white),
-                                SizedBox(width: 10),
-                                Text(
-                                  "Iniciar Sesión",
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
-                                ),
-                              ],
-                            ),
-                    ),
+                    child: controller.isLoading.value
+                        ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white))
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(Icons.login, color: Colors.white),
+                              SizedBox(width: 10),
+                              Text(
+                                "Iniciar Sesión",
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
+                              ),
+                            ],
+                          ),
                   ),
                 ),
               ),

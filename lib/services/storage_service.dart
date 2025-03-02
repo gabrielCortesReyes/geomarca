@@ -32,8 +32,6 @@ class StorageService extends GetxService {
       },
     );
 
-    //await deleteOldMarcas();
-
     return db;
   }
 
@@ -82,7 +80,6 @@ class StorageService extends GetxService {
     final db = await database;
     final ninetyDaysAgo = DateTime.now().subtract(Duration(days: 90));
 
-    // Formatear la fecha correctamente como 'yyyy-MM-dd HH:MM:SS'
     final ninetyDaysAgoStr =
         "${ninetyDaysAgo.year}-${ninetyDaysAgo.month.toString().padLeft(2, '0')}-${ninetyDaysAgo.day.toString().padLeft(2, '0')} "
         "${ninetyDaysAgo.hour.toString().padLeft(2, '0')}:${ninetyDaysAgo.minute.toString().padLeft(2, '0')}:${ninetyDaysAgo.second.toString().padLeft(2, '0')}";

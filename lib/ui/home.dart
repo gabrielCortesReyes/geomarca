@@ -30,7 +30,6 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    //_checkConnectivityAndSync();
     Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) async {
       if (results.isNotEmpty && results.first != ConnectivityResult.none) {
         await markerController.syncAllMarcas();
@@ -39,17 +38,6 @@ class _HomePageState extends State<HomePage> {
         print("No hay conexión a Internet. No se sincronizarán las marcas.");
       }
     });
-  }
-
-  Future<void> _checkConnectivityAndSync() async {
-    var connectivityResult = await Connectivity().checkConnectivity();
-
-    if (connectivityResult != ConnectivityResult.none) {
-      await markerController.syncAllMarcas();
-      markerController.loadMarcas();
-    } else {
-      print("No hay conexión a Internet. No se sincronizarán las marcas.");
-    }
   }
 
   @override
