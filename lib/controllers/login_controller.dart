@@ -188,9 +188,11 @@ class LoginSsoController extends GetxController with WidgetsBindingObserver {
         }
         return;
       }
+    } else {
+      isLogged.value = false;
+      await logEvent('No se encontró sesión de usuario');
     }
-    isLogged.value = false;
-    await logEvent('No se encontró sesión de usuario');
+    isLoading.value = false;
   }
 
   Future<void> validateSsoToken() async {

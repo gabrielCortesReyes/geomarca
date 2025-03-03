@@ -240,9 +240,10 @@ class _HomePageState extends State<HomePage> {
       }
 
       var connectivityResult = await Connectivity().checkConnectivity();
-      String? formatedDate = connectivityResult != ConnectivityResult.none
-          ? await mobileService.getTimeZoneByCoords(locationController.latitude.value, locationController.longitude.value)
-          : formatDate();
+      bool isConnected = connectivityResult != ConnectivityResult.none;
+
+      String? formatedDate =
+          isConnected ? await mobileService.getTimeZoneByCoords(locationController.latitude.value, locationController.longitude.value) : formatDate();
 
       Marker marker = Marker(
         pDeviceId: 0,
@@ -258,16 +259,21 @@ class _HomePageState extends State<HomePage> {
       );
 
       int marcaId = await storageService.insertMarca(marker.toJson());
-      if (connectivityResult != ConnectivityResult.none) {
-        var response = await mobileService.addMarca(marker, userData.token!);
-        if (response["retorno"] == 1) {
-          await storageService.updateMarcaSync(marcaId);
-          Get.snackbar("Éxito", "Marca registrada correctamente!");
-        } else {
-          Get.snackbar("Error", "Token expirado, marca guardada localmente", backgroundColor: Colors.orange);
+
+      if (isConnected) {
+        try {
+          var response = await mobileService.addMarca(marker, userData.token!);
+          if (response["retorno"] == 1) {
+            await storageService.updateMarcaSync(marcaId);
+            Get.snackbar("Éxito", "Marca registrada correctamente en el servidor.");
+          } else {
+            Get.snackbar("Mensaje", "Token expirado, la marca se sincronizará más tarde.", backgroundColor: Colors.orange);
+          }
+        } catch (e) {
+          Get.snackbar("Mensaje", "Sin conexión,  La marca se guardó localmente.", backgroundColor: Colors.orange);
         }
       } else {
-        Get.snackbar("Mensaje", "Sin conexión, marca guardada localmente", backgroundColor: Colors.orange);
+        Get.snackbar("Mensaje", "Sin conexión, la marca se guardó localmente.", backgroundColor: Colors.orange);
       }
     } finally {
       setState(() {
