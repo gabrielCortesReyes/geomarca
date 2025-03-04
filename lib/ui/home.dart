@@ -2,6 +2,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:geoanywhere/models/marker.dart';
 import 'package:geoanywhere/models/user.dart';
+import 'package:geoanywhere/services/connectivity_service.dart';
 import 'package:geoanywhere/services/storage_service.dart';
 import 'package:geoanywhere/utils/utils.dart';
 import 'package:get/get.dart';
@@ -24,19 +25,22 @@ class _HomePageState extends State<HomePage> {
   final MarkerController markerController = Get.put(MarkerController());
   final HfMobileService mobileService = Get.put(HfMobileService());
   final StorageService storageService = Get.put(StorageService());
+  final ConnectivityService connectivityService = Get.put(ConnectivityService());
+
   bool isLoadingEntrada = false;
   bool isLoadingSalida = false;
+  bool isConnected = true;
 
   @override
   void initState() {
     super.initState();
-    Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) async {
-      if (results.isNotEmpty && results.first != ConnectivityResult.none) {
-        await markerController.syncAllMarcas();
+    ever(connectivityService.isConnected, (bool status) {
+      if (status) {
+        print("🔄 Conexión restaurada. Sincronizando marcas...");
+        markerController.syncAllMarcas();
         markerController.loadMarcas();
-      } else {
-        print("No hay conexión a Internet. No se sincronizarán las marcas.");
       }
+      setState(() {});
     });
   }
 
@@ -233,17 +237,16 @@ class _HomePageState extends State<HomePage> {
         }
       });
 
+      bool hasInternet = await connectivityService.hasInternet();
+
       User? userData = loginController.user.value;
       if (userData == null || userData.token == null) {
         Get.snackbar("Mensaje", "Usuario no autenticado", backgroundColor: Colors.red, colorText: Colors.white);
         return;
       }
 
-      var connectivityResult = await Connectivity().checkConnectivity();
-      bool isConnected = connectivityResult != ConnectivityResult.none;
-
       String? formatedDate =
-          isConnected ? await mobileService.getTimeZoneByCoords(locationController.latitude.value, locationController.longitude.value) : formatDate();
+          hasInternet ? await mobileService.getTimeZoneByCoords(locationController.latitude.value, locationController.longitude.value) : formatDate();
 
       Marker marker = Marker(
         pDeviceId: 0,
@@ -260,7 +263,7 @@ class _HomePageState extends State<HomePage> {
 
       int marcaId = await storageService.insertMarca(marker.toJson());
 
-      if (isConnected) {
+      if (hasInternet) {
         try {
           var response = await mobileService.addMarca(marker, userData.token!);
           if (response["retorno"] == 1) {

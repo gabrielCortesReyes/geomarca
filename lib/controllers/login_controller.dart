@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:geoanywhere/services/connectivity_service.dart';
 import 'package:geoanywhere/services/mobile_service.dart';
 import 'package:get/get.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -11,6 +12,7 @@ import 'package:geoanywhere/models/user.dart';
 class LoginSsoController extends GetxController with WidgetsBindingObserver {
   final storage = const FlutterSecureStorage();
   final HfMobileService _hfMobileService = Get.find<HfMobileService>();
+  final ConnectivityService connectivityService = Get.put(ConnectivityService());
 
   Rx<User?> user = User().obs;
 
@@ -46,9 +48,15 @@ class LoginSsoController extends GetxController with WidgetsBindingObserver {
   }
 
   Future<void> initAutoLogin() async {
-    await logEvent('Iniciando auto-login');
-    await storage.write(key: 'sync', value: 'false');
-    await autoLogin();
+    bool isconnected = await connectivityService.hasInternet();
+    if (isconnected) {
+      await logEvent('Iniciando auto-login');
+      await storage.write(key: 'sync', value: 'false');
+      await autoLogin();
+      return;
+    } else {
+      await Get.snackbar("Mensaje", "No tienes conexión a internet, Vuelve a intentarlo mas tarde");
+    }
   }
 
   Future<void> logEvent(String message, [dynamic value]) async {
@@ -74,46 +82,51 @@ class LoginSsoController extends GetxController with WidgetsBindingObserver {
     await logEvent('Llamado al servicio getSsoToken');
 
     try {
-      final data = await _hfMobileService.getSsoToken(clientCode.value);
-      await logEvent('Servicio getSsoToken llamado correctamente', data);
+      bool isconnected = await connectivityService.hasInternet();
+      if (isconnected) {
+        final data = await _hfMobileService.getSsoToken(clientCode.value);
+        await logEvent('Servicio getSsoToken llamado correctamente', data);
 
-      if (data["retorno"] != 1) {
-        final match = RegExp(r'\[MSG-(\d{1,3})\]').firstMatch(data["mensaje"]);
-        final errorCode = match != null ? match.group(1) : '00G';
+        if (data["retorno"] != 1) {
+          final match = RegExp(r'\[MSG-(\d{1,3})\]').firstMatch(data["mensaje"]);
+          final errorCode = match != null ? match.group(1) : '00G';
 
-        Get.snackbar("Mensaje Inicio de Sesión", "Favor comuníquese con el administrador. (0x$errorCode)");
-        callServiceLog();
-        return;
+          Get.snackbar("Mensaje Inicio de Sesión", "Favor comuníquese con el administrador. (0x$errorCode)");
+          callServiceLog();
+          return;
+        }
+
+        token.value = data["detalle"]["sso_token"];
+        sessionId.value = data["detalle"]["sso_session_id"];
+        customerCode.value = data["detalle"]["customer"];
+
+        await storage.write(key: 'sessionId', value: sessionId.value);
+        await storage.write(key: 'customerCode', value: customerCode.value);
+        await storage.write(key: 'token', value: token.value);
+
+        user.value = User(
+          token: token.value,
+          sessionId: sessionId.value,
+          customerCode: customerCode.value,
+          ssoToken: data["detalle"]["sso_token"],
+          ssoSessionId: data["detalle"]["sso_session_id"],
+        );
+
+        isLogged.value = true;
+
+        await logEvent('Abriendo navegador con URL', data["detalle"]["sso_url"]);
+        await launchUrl(Uri.parse(data["detalle"]["sso_url"]));
+
+        final usuario = {
+          'token': token.value,
+          'sessionId': sessionId.value,
+          'customerCode': customerCode.value,
+          'clientCode': clientCode.value,
+        };
+        await storage.write(key: 'usuario', value: jsonEncode(usuario));
+      } else {
+        Get.snackbar("Mensaje", "No tienes conexión a internet, Vuelve a intentarlo mas tarde");
       }
-
-      token.value = data["detalle"]["sso_token"];
-      sessionId.value = data["detalle"]["sso_session_id"];
-      customerCode.value = data["detalle"]["customer"];
-
-      await storage.write(key: 'sessionId', value: sessionId.value);
-      await storage.write(key: 'customerCode', value: customerCode.value);
-      await storage.write(key: 'token', value: token.value);
-
-      user.value = User(
-        token: token.value,
-        sessionId: sessionId.value,
-        customerCode: customerCode.value,
-        ssoToken: data["detalle"]["sso_token"],
-        ssoSessionId: data["detalle"]["sso_session_id"],
-      );
-
-      isLogged.value = true;
-
-      await logEvent('Abriendo navegador con URL', data["detalle"]["sso_url"]);
-      await launchUrl(Uri.parse(data["detalle"]["sso_url"]));
-
-      final usuario = {
-        'token': token.value,
-        'sessionId': sessionId.value,
-        'customerCode': customerCode.value,
-        'clientCode': clientCode.value,
-      };
-      await storage.write(key: 'usuario', value: jsonEncode(usuario));
     } catch (e) {
       await logEvent('Error en getSsoToken', e.toString());
 
