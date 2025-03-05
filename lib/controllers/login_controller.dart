@@ -48,15 +48,10 @@ class LoginSsoController extends GetxController with WidgetsBindingObserver {
   }
 
   Future<void> initAutoLogin() async {
-    bool isconnected = await connectivityService.hasInternet();
-    if (isconnected) {
-      await logEvent('Iniciando auto-login');
-      await storage.write(key: 'sync', value: 'false');
-      await autoLogin();
-      return;
-    } else {
-      await Get.snackbar("Mensaje", "No tienes conexión a internet, Vuelve a intentarlo mas tarde");
-    }
+    await logEvent('Iniciando auto-login');
+    await storage.write(key: 'sync', value: 'false');
+    await autoLogin();
+    return;
   }
 
   Future<void> logEvent(String message, [dynamic value]) async {
@@ -72,7 +67,7 @@ class LoginSsoController extends GetxController with WidgetsBindingObserver {
 
   Future<void> login() async {
     if (clientCode.value.isEmpty) {
-      Get.snackbar("Mensaje", "Ingrese el código para empezar");
+      Get.snackbar("Mensaje", "Ingrese el código para empezar", snackPosition: SnackPosition.BOTTOM);
       return;
     }
 
@@ -91,7 +86,7 @@ class LoginSsoController extends GetxController with WidgetsBindingObserver {
           final match = RegExp(r'\[MSG-(\d{1,3})\]').firstMatch(data["mensaje"]);
           final errorCode = match != null ? match.group(1) : '00G';
 
-          Get.snackbar("Mensaje Inicio de Sesión", "Favor comuníquese con el administrador. (0x$errorCode)");
+          Get.snackbar("Mensaje Inicio de Sesión", "Favor comuníquese con el administrador. (0x$errorCode)", snackPosition: SnackPosition.BOTTOM);
           callServiceLog();
           return;
         }
@@ -125,17 +120,17 @@ class LoginSsoController extends GetxController with WidgetsBindingObserver {
         };
         await storage.write(key: 'usuario', value: jsonEncode(usuario));
       } else {
-        Get.snackbar("Mensaje", "No tienes conexión a internet, Vuelve a intentarlo mas tarde");
+        Get.snackbar("Mensaje", "No tienes conexión a internet, Vuelve a intentarlo mas tarde", snackPosition: SnackPosition.BOTTOM);
       }
     } catch (e) {
       await logEvent('Error en getSsoToken', e.toString());
 
       if (e.toString().contains("500")) {
-        Get.snackbar("Mensaje", "Comuniquese con el administrador de la aplicación. (GEOSSO0x010)");
+        Get.snackbar("Mensaje", "Comuniquese con el administrador de la aplicación. (GEOSSO0x010)", snackPosition: SnackPosition.BOTTOM);
       } else if (e.toString().contains("404")) {
-        Get.snackbar("Mensaje", "Comuniquese con el administrador de la aplicación. (GEOSSO0x020)");
+        Get.snackbar("Mensaje", "Comuniquese con el administrador de la aplicación. (GEOSSO0x020)", snackPosition: SnackPosition.BOTTOM);
       } else {
-        Get.snackbar("Mensaje", "Verifique su conexión a internet y vuelva a intentar. (GEOSSO0x030)");
+        Get.snackbar("Mensaje", "Verifique su conexión a internet y vuelva a intentar. (GEOSSO0x030)", snackPosition: SnackPosition.BOTTOM);
       }
       callServiceLog();
     } finally {
@@ -158,11 +153,8 @@ class LoginSsoController extends GetxController with WidgetsBindingObserver {
 
         isLogged.value = true;
         await logEvent('Datos de sesión encontrados. Intentando validación automática.');
-
-        var connectivityResult = await Connectivity().checkConnectivity();
-        bool isConnected = connectivityResult != ConnectivityResult.none;
-
-        if (isConnected) {
+        bool hasInternet = await connectivityService.hasInternet();
+        if (hasInternet) {
           final data = await _hfMobileService.getSsoToken(clientCode.value);
           await logEvent('Servicio getSsoToken llamado correctamente', data);
 
@@ -170,7 +162,7 @@ class LoginSsoController extends GetxController with WidgetsBindingObserver {
             final match = RegExp(r'\[MSG-(\d{1,3})\]').firstMatch(data["mensaje"]);
             final errorCode = match != null ? match.group(1) : '00G';
 
-            Get.snackbar("Mensaje Inicio de Sesión", "Favor comuníquese con el administrador. (0x$errorCode)");
+            Get.snackbar("Mensaje Inicio de Sesión", "Favor comuníquese con el administrador. (0x$errorCode)", snackPosition: SnackPosition.BOTTOM);
             callServiceLog();
             return;
           }
@@ -195,11 +187,19 @@ class LoginSsoController extends GetxController with WidgetsBindingObserver {
             'clientCode': clientCode.value,
           };
           await storage.write(key: 'usuario', value: jsonEncode(usuario));
+
+          return;
         } else {
+          Get.snackbar("Mensaje", "No tienes conexión a internet, Los datos se guardaran localmente", snackPosition: SnackPosition.BOTTOM);
+          user.value = User.fromJson(jsonDecode(userData));
+          print(user.value);
           Get.offAllNamed('/home');
           isLoading.value = false;
         }
-        return;
+        await logEvent('Conexión a internet detectada');
+      } else {
+        Get.offAllNamed('/home');
+        isLoading.value = false;
       }
     } else {
       isLogged.value = false;
@@ -222,7 +222,7 @@ class LoginSsoController extends GetxController with WidgetsBindingObserver {
       );
 
       if (data["retorno"] != 1) {
-        Get.snackbar("Mensaje", "Sesión no válida, por favor inicie sesión de nuevo.");
+        Get.snackbar("Mensaje", "Sesión no válida, por favor inicie sesión de nuevo.", snackPosition: SnackPosition.BOTTOM);
         await storage.deleteAll();
         isLogged.value = false;
         return;

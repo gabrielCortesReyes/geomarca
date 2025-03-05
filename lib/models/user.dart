@@ -29,6 +29,10 @@ class User {
         mensaje: json["mensaje"],
         detalle: json["detalle"] != null ? Detalle.fromJson(json["detalle"]) : null,
         token: json["token"],
+        sessionId: json["sessionId"],
+        customerCode: json["customerCode"],
+        ssoToken: json["ssoToken"],
+        ssoSessionId: json["ssoSessionId"],
       );
 
   Map<String, dynamic> toJson() => {
@@ -36,9 +40,12 @@ class User {
         "mensaje": mensaje,
         "detalle": detalle?.toJson(),
         "token": token,
+        "sessionId": sessionId,
+        "customerCode": customerCode,
+        "ssoToken": ssoToken,
+        "ssoSessionId": ssoSessionId,
       };
 
-  /// Método copyWith para actualizar datos sin perder los valores anteriores
   User copyWith({
     int? retorno,
     String? mensaje,
@@ -62,21 +69,22 @@ class User {
   }
 }
 
+/// 🔹 **Modelo `Detalle` (sin cambios, pero asegurando seguridad con `?`)**
 class Detalle {
-  String userId;
-  String orgId;
-  String hfEquipId;
-  String username;
-  String nombre;
-  String email;
+  String? userId;
+  String? orgId;
+  String? hfEquipId;
+  String? username;
+  String? nombre;
+  String? email;
 
   Detalle({
-    required this.userId,
-    required this.orgId,
-    required this.hfEquipId,
-    required this.username,
-    required this.nombre,
-    required this.email,
+    this.userId,
+    this.orgId,
+    this.hfEquipId,
+    this.username,
+    this.nombre,
+    this.email,
   });
 
   factory Detalle.fromJson(Map<String, dynamic> json) => Detalle(

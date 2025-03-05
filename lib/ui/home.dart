@@ -240,8 +240,8 @@ class _HomePageState extends State<HomePage> {
       bool hasInternet = await connectivityService.hasInternet();
 
       User? userData = loginController.user.value;
-      if (userData == null || userData.token == null) {
-        Get.snackbar("Mensaje", "Usuario no autenticado", backgroundColor: Colors.red, colorText: Colors.white);
+      if (userData == null) {
+        Get.snackbar("Mensaje", "Usuario no autenticado", backgroundColor: Colors.red, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
         return;
       }
 
@@ -268,15 +268,17 @@ class _HomePageState extends State<HomePage> {
           var response = await mobileService.addMarca(marker, userData.token!);
           if (response["retorno"] == 1) {
             await storageService.updateMarcaSync(marcaId);
-            Get.snackbar("Éxito", "Marca registrada correctamente en el servidor.");
+            Get.snackbar("Éxito", "Marca registrada correctamente en el servidor.", snackPosition: SnackPosition.BOTTOM);
           } else {
-            Get.snackbar("Mensaje", "Token expirado, la marca se sincronizará más tarde.", backgroundColor: Colors.orange);
+            Get.snackbar("Mensaje", "Token expirado, la marca se sincronizará más tarde.",
+                backgroundColor: Colors.orange, snackPosition: SnackPosition.BOTTOM);
           }
         } catch (e) {
-          Get.snackbar("Mensaje", "Sin conexión,  La marca se guardó localmente.", backgroundColor: Colors.orange);
+          Get.snackbar("Mensaje", "Sin conexión,  La marca se guardó localmente.",
+              backgroundColor: Colors.orange, snackPosition: SnackPosition.BOTTOM);
         }
       } else {
-        Get.snackbar("Mensaje", "Sin conexión, la marca se guardó localmente.", backgroundColor: Colors.orange);
+        Get.snackbar("Mensaje", "Sin conexión, la marca se guardó localmente.", backgroundColor: Colors.orange, snackPosition: SnackPosition.BOTTOM);
       }
     } finally {
       setState(() {

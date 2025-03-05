@@ -149,6 +149,7 @@ class HfMobileService extends GetxService {
         return await _handleError(response);
       }
     } catch (e) {
+      print(e);
       return {"error": "Error de conexión: $e"};
     }
   }
