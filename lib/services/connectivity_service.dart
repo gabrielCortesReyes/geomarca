@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ffi';
 import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:get/get.dart';
@@ -18,19 +19,24 @@ class ConnectivityService extends GetxService {
     });
   }
 
-  Future<void> _checkInternetConnection() async {
+  Future<bool> _checkInternetConnection() async {
     final result = await _connectivity.checkConnectivity();
+    print(result);
     if (result.isNotEmpty && result.first != ConnectivityResult.none) {
       bool hasInternet = await _hasInternetAccess();
-      isConnected.value = hasInternet;
       if (hasInternet) {
-        print("✅ Conexión a Internet disponible, iniciando sincronización...");
+        print("Conexión a Internet disponible, iniciando sincronización...");
+        isConnected.value = true;
+        return true;
       } else {
-        print("⚠️ Conectado a una red, pero sin acceso a Internet.");
+        print("Conectado a una red, pero sin acceso a Internet.");
+        isConnected.value = false;
+        return false;
       }
     } else {
-      print("❌ No hay conexión a ninguna red.");
+      print("No hay conexión a ninguna red.");
       isConnected.value = false;
+      return false;
     }
   }
 

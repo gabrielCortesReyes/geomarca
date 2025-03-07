@@ -39,6 +39,8 @@ class _HomePageState extends State<HomePage> {
         print("🔄 Conexión restaurada. Sincronizando marcas...");
         markerController.syncAllMarcas();
         markerController.loadMarcas();
+      } else {
+        print("Sin conexión. Marcas no sincronizadas.");
       }
       setState(() {});
     });
@@ -66,6 +68,7 @@ class _HomePageState extends State<HomePage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -79,6 +82,13 @@ class _HomePageState extends State<HomePage> {
                       );
                     }),
                   ],
+                ),
+                Obx(
+                  () => Column(
+                    children: [
+                      connectivityService.isConnected.value ? Icon(Icons.wifi, color: Colors.green) : Icon(Icons.wifi_off_sharp, color: Colors.red),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -182,7 +192,10 @@ class _HomePageState extends State<HomePage> {
             child: Text("Cerrar"),
           ),
           TextButton(
-            onPressed: () => markerController.syncAllMarcas(),
+            onPressed: () {
+              markerController.syncAllMarcas();
+              Get.back();
+            },
             child: Text("Sincronizar"),
           ),
         ],

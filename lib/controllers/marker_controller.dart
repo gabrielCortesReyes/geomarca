@@ -61,12 +61,10 @@ class MarkerController extends GetxController {
         if (response.containsKey("retorno") && response["retorno"] == 1) {
           await storageService.updateMarcaSync(marcaId);
           loadMarcas();
-        } else {
-          Get.snackbar("Mensaje", "No se pudo sincronizar la marca, vuelve a iniciar sesión",
-              snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.orange, colorText: Colors.white);
-          return;
         }
       }
+      Get.snackbar("Mensaje", "Marcas sincronizadas correctamente",
+          snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green, colorText: Colors.white);
     } catch (e) {
       Get.snackbar("Mensaje", "No se pudo sincronizar las marcas", snackPosition: SnackPosition.BOTTOM);
     } finally {
